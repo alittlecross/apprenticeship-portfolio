@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../main.css">
+    <title>Age Weight Key</title>
+  </head>
+  <body>
+
+  <div class="centralised">
+
+    <h2>Rod Catch Returns</h2>
+
+    <a class="back" href="../../welcome.html">Back</a>
+
+    <h3>Sections</h3>
+
+    <a href="#introduction">Introduction</a><br>
+    <a href="#weight">Age Weight Key</a><br>
+    <a href="#understanding">Understanding the Application</a><br>
+    <a href="#adapting">Adapting the Existing User Interface</a><br>
+    <a href="#breakdown">Creating the Error Breakdown Page</a><br>
+    <a href="#conflict">Creating the Upload Conflict Page</a><br>
+    <a href="#testing">Testing</a><br>
+    <a href="#completed">The Completed Feature</a>
+
+    <h3 id="introduction">Introduction</h3>
+
+    <p>At the beginning of July, I re-evaluated my position; the Resource Management Tool project was giving me great experience in a number of areas but as a new application, largely working on my own receiving feedback from senior developers and colleagues, there were some areas were more experience was needed.</p>
+    
+    <p>I raised this with my manager and asked them if there were opportunities available in other teams. The most suitable was on the <code>'I want to fish'</code> team in Bristol. This would mean a considerable commute for me, and if I were expected to be present 9-5, five days a week, it would impact heavily on my work-life balance.</p>
+    
+    <p>I discussed options with my manager, and the manager in Bristol, and agreed to work 4 days one week, 3 days the next, and repeat that pattern. This gave me a reasonable amount of time at home and time to travel between Newcastle and Bristol during office hours so as not to burn myself out.</p>
+    
+    <p>The <code>'fish'</code> team support two main services, the <code>'Get a Fishing Licence'</code> service and the <code>'Rod Catch Returns'</code> service. I would be starting on the <code>'Rod Catch Returns'</code> service. This service is for external users to record the fish they have caught, as well as internal users to produce reports on the cumulative number of fishes caught in each river each month. Feeding into these reports is data on the probability that salmon caught in certain rivers would be of a certain type.</p>
+
+    <h3 id="weight">Age Weight Key</h3>
+
+    <p>The senior developers on my new team decided on a piece of work that would give me a good overview of one of the two main services the team supported, this was the Age Weight Key upload feature; it involved considering an end to end user journey, along with touching on all areas of the codebase.</p>
+    
+    <p>The feature to be developed would deal with errors encountered during the upload of the salmon probability data. The functionality to upload the data was already in place; this was a form to select a year, a file, and an overwrite option, which on submission was sent via an API call (an Application Programming Interface function) to store the data in a database. The old user interface can be seen below.</p>
+
+    <br><img src="../images/rcr/upload-page-before.png" alt="Upload Page Before" onclick="maxi(this)"><br>
+
+    <p>A change had already been made to the API so as to validate the file and return formatting issues, as well as other general errors, and a design document had been produced by the team's content designer, page 1 shown below; the feature needed to match this specification as closely as possible.</p>
+
+    <br><img src="../images/rcr/design-page-1.png" alt="Upload Page Design" onclick="maxi(this)"><br>
+
+    <h3 id="understanding">Understanding the Application</h3>
+
+    <p>Before beginning to write any code, I read through the existing code to understand the flow of control through the application. I worked on a local copy of the codebase, allowing me to insert break points and console logs to see when the application ran certain blocks of code. Once I felt comfortable with the application, I began to consider how the new feature should fit into the existing code. With this in mind, I drew the UML style activity diagram below.</p>
+
+    <br><img src="../images/rcr/uml-style-diagram.png" alt="UML Style Diagram" onclick="maxi(this)"><br>
+
+    <p>This highlighted the major interactions from the point of view of the code, and where conditional statements needed to be in place to bypass certain steps or add data to the cache. To better understand how this integrated with the design document, I also mapped out each possible user journey, as shown below.</p>
+
+    <br><img src="../images/rcr/activity-workflow.png" alt="User Journies" onclick="maxi(this)"><br>
+
+    <h3 id="adapting">Adapting the Existing User Interface</h3>
+
+    <p>I first had to update the <code>'/age-weight-key'</code> view to match that in the design document; this involved adding radio buttons to select a river, changing the <code>'year'</code> radio buttons into a text field, removing the <code>'overwrite'</code> tick box, adding a hidden example of the expected data format, along with some changes to wording, layout and style.</p>
+    
+    <p>Much like the ELM project spoken about earlier, as <code>'Rod Catch Returns'</code> is a public facing service, GDS standard style needed to be adhered to, and GDS components were used to achieve this. Shown below is the updated <code>'/age-weight-key'</code> view written using Nunjucks, followed by the updated user interface, matching the design, to show how the code renders on the page.</p>
+
+    <br><img src="../images/rcr/upload-view-1.png" alt="The '/age-weight-key' View" onclick="maxi(this)"><br>
+    <br><img src="../images/rcr/upload-page-after.png" alt="Upload Page After" onclick="maxi(this)"><br>
+
+    <p>To deal with the changes to the form data I also had to make changes to the module that validates the form data, before it's passed to the API; in accordance with the errors outlined in the design document, shown below.</p>
+
+    <br><img src="../images/rcr/design-errors.png" alt="Upload Errors" onclick="maxi(this)"><br>
+
+    <p>This included ensuring a river was selected, that a year was entered and was within the range permitted, and that a file was selected and met all the requirements for upload. If any errors are encountered, these are added to an <code>'errors'</code> Array. The code for this can be seen below on lines 18 to 45.</p>
+
+    <br><img src="../images/rcr/upload-validator-1.png" alt="Upload Validator" onclick="maxi(this)"><br>
+
+    <p>Once this block of code has executed, if the <code>'errors'</code> Array is empty, an upload is then attempted (the API call) which returns a response Object. If this Object contains general errors, identified by the API, these are added to the <code>'errors'</code> Array. If the only error contained in the Object is that the same file has already been uploaded, this will only be saved to the cache as a conflict, and not added to the <code>'errors'</code> Array. The cache in this context is a temporary storage area so that information can be saved and retrieved across the session. If at the end of this function the <code>'errors'</code> Array is still empty, <code>'null'</code> will be returned, otherwise the <code>'errors'</code> Array itself will be returned. This can be seen below, lines 47 to 80.</p>
+
+    <br><img src="../images/rcr/upload-validator-2.png" alt="Upload Validator" onclick="maxi(this)"><br>
+
+    <p>Control is then returned to the POST handler <code>'doPost'</code> function, shown below, to decide which route to take; I updated this so that if there is a conflict it is marked in the cache, then redirects to the <code>'/age-weight-key-conflict-check'</code> GET route, show on line 55. If the validation module returned the <code>'errors'</code> Array, it calls a function <code>'writeCacheAndRedirect'</code>, which writes the <code>'errors'</code> Array to the cache, and redirects back to the <code>'/age-weight-key'</code> GET route, show on lines 67, and 68. If <code>'null'</code> was returned from the validation module it redirects to the existing <code>'/age-weight-key-ok'</code> GET route.</p>
+
+    <br><img src="../images/rcr/upload-dopost.png" alt="The Upload 'doPost' function" onclick="maxi(this)"><br>
+
+    <p>I updated the GET handler <code>'doGet'</code> function, shown below, so as to read the last river and year entries from the cache, to prepopulate the form, along with the list of valid rivers and years. It then calls a function <code>'readCacheAndDisplayView'</code> to pass those pieces of data, the errors from the cache, and some other standard information, back to the view.</p>
+
+    <br><img src="../images/rcr/upload-doget.png" alt="The Upload 'doGet' function" onclick="maxi(this)"><br>
+
+    <p>I then had to make further changes to the <code>'/age-weight-key'</code> view to display all the information passed to it, and present it as outlined in the design document. Some of that Nunjucks code is shown below.</p>
+
+    <br><img src="../images/rcr/upload-view-2.png" alt="The '/age-weight-key' View" onclick="maxi(this)"><br>
+
+    <p>This all worked towards presenting the errors to the page in the appropriate areas, as seen in the images below, along with storing the error information for future use.</p>
+
+    <br><img src="../images/rcr/upload-page-with-errors-1.png" alt="Upload Page with Errors" onclick="maxi(this)"><br>
+    <br><img src="../images/rcr/upload-page-with-errors-2.png" alt="Upload Page with Errors" onclick="maxi(this)"><br>
+
+    <p>There were periodic reviews of the UI with the content designer, as well as other members of the team, to ensure the user experience flowed smoothly. My code was also reviewed by senior developers on the team; positive feedback reassured me I was following the standards set by the team.</p>
+
+    <h3 id="breakdown">Creating the Error Breakdown Page</h3>
+
+    <p>The next page of the design document, shown below, required a new page to be created, navigated to from the <code>'View all the files errors'</code> link in the <code>'/age-weight-key'</code> error summary.</p>
+
+    <br><img src="../images/rcr/design-page-3.png" alt="Error Breakdown Design" onclick="maxi(this)"><br>
+
+    <p>The first part of this feature, the upload page, seemed quite straightforward to implement. The second part, to take the complex errors Object returned by the API and transfer it to the page to match the design document, not so obvious.</p>
+    
+    <p>To get to the solution, my first step was to retrieve the <code>'errorsObject'</code> from the cache and pass it as an argument to a function, <code>'buildErrorItemsObject'</code>, where I could carry out the necessary transformation, and return the desired output for the page, shown below on line 136.</p>
+
+    <br><img src="../images/rcr/breakdown-doget.png" alt="The Breakdown 'doGet' function" onclick="maxi(this)"><br>
+
+    <p>My next step was simply to output the <code>'errorsObject'</code> to the console to better visualise the structure. The Object was made up of key/value pairs with values that were either String Arrays or Objects, these Objects again being made up of key/value pairs with values that were either String Arrays or Objects, and so on.</p>
+    
+    <p>Each error Object would differ, depending on the errors present in the file when the upload was attempted; it would be wrong to assume the structure would be the same each time, so the first thing the <code>'buildErrorItemsObject'</code> needed to do was identify the keys of any given errors Object, shown below on line 12.</p>
+
+    <br><img src="../images/rcr/breakdown-builderroritemsobject-1.png" alt="The 'buildErrorItemsObject' function" onclick="maxi(this)"><br>
+
+    <p>I uploaded a file that contained one of each of the expected errors so as to receive a response from the API that contained the corresponding error codes to those errors. I next output these keys to the console to see the full list of possible keys, and to ensure I was dealing with a String Array.</p>
+    
+    <p>It could be assumed that certain keys had certain value types; for example, <code>'generalErrors'</code> would be a String Array, <code>'headerErrors'</code> would be an Object, and so on.</p>
+    
+    <p>I iterate through this String Array (seen above on line 14), and used a switch statement with cases for each of the possible keys (seen above on line 16); if the case expected a String Array, I output that Array to the console, if the case expected an Object, then I identified the keys of that Object, and output those to the console.</p>
+    
+    <p>As before, this allowed me to see the full list of possible keys for that error type, and ensured I was dealing with a String Array.</p>
+    
+    <p>I repeated the above with the next two layers of cases that expected an Object until only String Arrays were being output to the console; this meant I had reached the end of 'Objects nested within Objects', and the String Arrays being output to the console were the errors themselves rather than information relating to the error types.</p>
+    
+    <p>I created an <code>'errorItems'</code> Array (seen above on line 11) to store error items to return for displaying on the page, then I amended the switch statement cases to remove all the outputs to the console, replacing them with code to add each String Array to the <code>'errorItems'</code> Array, finally I returned the <code>'errorItems'</code> Array.</p>
+    
+    <p>This 'returned Array' was passed to the <code>'/age-weight-key-error-breakdown'</code> view for rendering. I amended the view so as to iterate through the Array and create a simple table row displaying the error, show below on lines 18 to 30 and 45 to 56.</p>
+
+    <br><img src="../images/rcr/breakdown-view.png" alt="The '/age-weight-key-error-breakdown' View" onclick="maxi(this)"><br>
+
+    <p>At this point the errors were still short Strings briefly explaining the error, or a single letter or number relating to a column or row in the uploaded file. More work was needed to turn these into meaningful statements to match the design document, shown below.</p>
+
+    <br><img src="../images/rcr/breakdown-errors.png" alt="Errors Breakdown" onclick="maxi(this)"><br>
+
+    <p>Returning to the <code>'buildErrorItemsObject'</code> function, I amended each case to iterate through its String Array, and for each error create an Object with the properties of <code>'type'</code> and <code>'message'</code>. The messages related to those on the design document, and pulled together information from each of the layers above. An excerpt of the completed code is shown below showing some of the case statements, and the <code>'errorItems'</code> returned on line 130.</p>
+
+    <br><img src="../images/rcr/breakdown-builderroritemsobject-2.png" alt="The 'buildErrorItemsObject' function" onclick="maxi(this)"><br>
+
+    <p>For example, for an <code>'INVALID_PROBABILITY'</code> error (seen above on line 110), the error itself is nested 3 layers deep so the error message takes the row number from the final layer, the column letter from the layer above, and error type from the layer above that.</p>
+    
+    <p>These Objects were added to the <code>'errorItems'</code> Array and, as before, that Array was returned at the end of the function. I amended the <code>'/age-weight-key-error-breakdown'</code> view again so as to iterate through the Array of Objects and create a more detailed table row displaying the error. The final result can be seen below, breaking down errors into meaningful messages that match those outlined in the design document.</p>
+
+    <br><img src="../images/rcr/breakdown-page.png" alt="Error Breakdown Page" onclick="maxi(this)"><br>
+
+    <h3 id="conflict">Creating the Upload Conflict Page</h3>
+
+    <p>The next page of the design document, shown below, required another new page to be created, reached after uploading a file that caused conflict to be marked in the cache, the <code>'/age-weight-key-conflict-check'</code> GET route mentioned earlier. In turn this required a <code>'/age-weight-key-conflict-check'</code> POST route to handle the form data passed by this page.</p>
+
+    <br><img src="../images/rcr/design-page-4.png" alt="Conflict Page Design" onclick="maxi(this)"><br>
+
+    <p>I created routes, a validator, and then handlers, all shown below.</p>
+
+    <br><img src="../images/rcr/conflict-routes-validator-and-handlers.png" alt="Conflict Routes, Validator, & Handlers" onclick="maxi(this)"><br>
+
+    <p>The validator simply checks that a radio button was selected before handing control back to the <code>'doPost'</code> hander. If no selection was made it redirects back to the <code>'/age-weight-key-conflict-check'</code> GET route to display an error.</p>
+    
+    <p>If <code>'No - cancel this upload'</code> was selected it redirects to the <code>'/age-weight-key'</code> GET route, and if <code>'Yes - replace the existing age weight key'</code> was selected the API call to upload the file is repeated, this time with a flag to indicate that it is ok to overwrite the previous upload; it then redirects to the existing <code>'/age-weight-key-ok'</code> GET route.</p>
+    
+    <p>I created the <code>'/age-weight-key-conflict-check'</code> view using GDS standard components, written in Nunjucks, shown in the first image below, which renders to match the design document; the finished pages are shown in the second and third images.</p>
+
+    <br><img src="../images/rcr/conflict-view.png" alt="The '/age-weight-key-conflict-check' View" onclick="maxi(this)"><br>
+    <br><img src="../images/rcr/conflict-page.png" alt="Conflict Page" onclick="maxi(this)"><br>
+    <br><img src="../images/rcr/conflict-page-with-error.png" alt="Conflict Page with Error" onclick="maxi(this)"><br>
+
+    <h3 id="testing">Testing</h3>
+
+    <p>Throughout, the feature was developed using manual feature tests. This first image shows an attempt to reach the URL <code>'/age-weight-key-conflict-check'</code> and receiving an error in the browser to say the page was not found.</p>
+
+    <br><img src="../images/rcr/test-page-not-found.png" alt="Page Not Found" onclick="maxi(this)"><br>
+
+    <p>To resolve this error, I created the route for URL <code>'/age-weight-key-conflict-check'</code>.</p>
+
+    <br><img src="../images/rcr/test-conflict-route.png" alt="Conflict Check Route" onclick="maxi(this)"><br>
+
+    <p>Another attempt to reach the URL <code>'/age-weight-key-conflict-check'</code> presents an error in the terminal to say the route handler is not defined.</p>
+
+    <br><img src="../images/rcr/test-handler-not-defined.png" alt="Route Handler Not Defined" onclick="maxi(this)"><br>
+
+    <p>The next image shows the route handler I created to resolve this error.</p>
+
+    <br><img src="../images/rcr/test-conflict-handler.png" alt="Conflict Check Handler" onclick="maxi(this)"><br>
+
+    <p>Another attempt to reach the URL <code>'/age-weight-key-conflict-check'</code>, this time presents an error in the browser to say there is a problem with the service; the second image shows the error details shown in the terminal, saying the view file for the route could not be found.</p>
+
+    <br><img src="../images/rcr/test-problem-with-service.png" alt="A Problem with the Service" onclick="maxi(this)"><br>
+    <br><img src="../images/rcr/test-view-not-found.png" alt="View File Not Found" onclick="maxi(this)"><br>
+
+    <p>The next image shows the view file I created for the route, written in Nunjucks, and the second image shows success in reaching the URL <code>'/age-weight-key-conflict-check'</code>.</p>
+
+    <br><img src="../images/rcr/test-conflict-view.png" alt="The '/age-weight-key-conflict-check' View" onclick="maxi(this)"><br>
+    <br><img src="../images/rcr/test-conflict-page.png" alt="Conflict Page" onclick="maxi(this)"><br>
+
+    <p>Unit tests were also used to ensure each possible user journey was covered, examples of which can be seen below.</p>
+
+    <br><img src="../images/rcr/test-unit-tests.png" alt="Unit Tests" onclick="maxi(this)"><br>
+
+    <h3 id="completed">The Completed Feature</h3>
+
+    <p>The reviews of my work during the development occasionally resulted in changes to the design - like how the errors persisted when navigating to and from the error breakdown page but removed from the cache when navigating away from the age weight key pages entirely, or changing the format of some elements to more closely match government standards.</p>
+    
+    <p>This feature was primarily delivered for internal users, for them to upload more accurate data to feed into reports. This in turn benefits higher management by improving the information available to them and helping them make better decisions on policies.</p>
+    
+    <p>The feature having been signed off for deployment into the live environment reassures me that what I delivered met expectation, and the senior developers not having to make amendments to the code I wrote reassures me I was able it identify and follow the coding standards laid out by the team.</p>
+
+    <a href="../../welcome.html">Back</a>
+
+  </div>
+
+  <div id="modal">
+    <img id="image">
+    <div id="caption"></div>
+    <span id="cross" onclick="mini()">&times;</span>
+  </div>
+
+  <script src="../main.js"></script>
+
+  </body>
+</html>

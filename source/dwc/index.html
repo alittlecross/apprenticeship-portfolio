@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../main.css">
+    <title>Defra WDIO Core</title>
+  </head>
+  <body>
+
+  <div class="centralised">
+
+    <h2>Defra WDIO Core</h2>
+
+    <a class="back" href="../../welcome.html">Back</a>
+
+    <h3>Sections</h3>
+
+    <a href="#introduction">Introduction</a><br>
+    <a href="#deciding">Deciding to Use NPM</a><br>
+    <a href="#automating">Automating Installation</a><br>
+    <a href="#anomalies">Some NPM Anomalies</a><br>
+    <a href="#extending">Extending the Tool</a><br>
+    <a href="#guidance">Usage Guidance</a>
+
+    <h3 id="introduction">Introduction</h3>
+
+    <p>Once I'd delivered the enhancements for the Age Weight Key upload, the senior developers and Quality Assurance tester on the team suggested I look at developing a tool to make Quality Assurance testing more consistent across teams, along with removing some of the issues associated with setting up a new acceptance test project.</p>
+    
+    <p>The senior developers and QA tester had been discussing the idea for a while with the head of Defra Digital Strategy, with the intention of the tool being used by all QA testers across the agency.</p>
+    
+    <p>The tool needed to instantiate a new project and hold an agreed standard for configuration. The tool also needed to be extensible and customisable to accommodate the idiosyncrasies of each service under test.</p>
+    
+    <p>Making the process of setting up a new Acceptance Test project more efficient and consistent means tests can be written more quickly, and in turn features can be accepted, and deployed to live services more quickly.</p>
+    
+    <p>Having a more consistent approached to testing would also mean QA testers could work across teams.</p>
+
+    <h3 id="deciding">Deciding to Use NPM</h3>
+
+    <p>As soon as it was suggested, I had some ideas about how the tool should function. The easier option would be to have a template repository that could be cloned however this presented some issues; it would result in a lot of the setup code being in every project, and would also make it more difficult to update every project to ensure they were using the agreed standard for configuration.</p>
+    
+    <p>The better option was to develop and publish a Node.js module that could be installed in a project via the command line using NPM and would work immediately for local testing, and would work with BrowserStack, provided credentials were saved as environment variables. NPM is a Node.js Package Manager</p>
+    
+    <p>BrowserStack is a cloud-based testing platform that enables the testing of applications in different browsers, and on different operating systems and mobile devices.</p>
+    
+    <p>During installation, the module would run a script to create the necessary files in the parent project, referencing the WebdriverIO setup held in <code>'defra-wdio-core'</code> within the <code>'node_modules'</code> folder.</p>
+
+    <p>WebdriverIO is a test framework that controls and asserts behaviour in a browser, implementing the WebDriver specification laid out by W3C.</p>
+    
+    <p>Included in the necessary files should be example uses of features available in <code>'defra-wdio-core'</code> along with custom configuration files that could be extended to change any of the standard WebdriverIO configuration or behaviours.</p>
+    
+    <p>I drew an activity diagram of how the installation process would work using NPM, shown below; whilst developing the code the diagram helped me to keep in mind the state of play, be it pre, during, or post installation.</p>
+
+    <br><img src="../images/dwc/activity-diagram-1.png" alt="Activity Diagram" onclick="maxi(this)"><br>
+
+    <h3 id="automating">Automating Installation</h3>
+
+    <p>Any Node.js <em>module</em> being installed in a Node.js project is itself a Node.js <em>project</em> so my first step was to initialise a new Node.js project. This created a file called <code>'package.json'</code> which held meta-data about the project, shown below.</p>
+
+    <br><img src="../images/dwc/package-json.png" alt="'package.json'" onclick="maxi(this)"><br>
+    
+    <p>Node.js projects can be published to <code>'npmjs.com'</code> using <code>'npm publish'</code> for anyone to install them in their own projects using <code>'npm install [project-name]'</code>. When <code>'npm install'</code> is used the <code>'package.json'</code> is read and any referenced scripts are executed. I added a reference to an <code>'install'</code> script (seen above), in the <code>'./bin'</code> folder, to run during installation.</p>
+
+    <p>The script itself was very simple, shown below, checking whether the <code>'npm install'</code> was being carried out globally or locally, before requiring and calling a function.</p>
+
+    <br><img src="../images/dwc/bin-script.png" alt="Install Script" onclick="maxi(this)"><br>
+
+    <p>The QA tester should have created a directory for their project and have changed into that directory before using <code>'npm install defra-wdio-core'</code> to install this module.</p>
+    
+    <p>Nothing would happen if the QA tester tried to install it globally; if they were able to install it globally it would not work as it would be outside of the projects' that needed it and references to those projects, to <code>'defra-wdio-core'</code>, and to the working directory would all be incorrect.</p>
+    
+    <p>The function called by the install script is can be seen below. It gets the name of the working directory, which is the <code>'defra-wdio-core'</code> folder, in the <code>'node_modules'</code> folder, in the parent project. It creates a reference to a <code>'base'</code> folder within the working directory, then navigates down the file structure to the root of the parent project and creates a reference to that too. It then copies files from one to the other, ensuring the folder structure of the copied files' remains intact by using a Node.js module called <code>'fs-extra'</code> which extends the existing Node.js file structure functionality. It then repeats the process, copying files from a different <code>'base'</code> folder (<code>'src/conf/base'</code>) into the parent project, this time restricted so as to not copy files if they already exist.</p>
+
+    <br><img src="../images/dwc/copy-files-script.png" alt="Copy Files Script" onclick="maxi(this)"><br>
+
+    <p>Although in the early stages of development, consideration was given to how the install scripts would any point in the future. The QA tester may want to run <code>'npm update'</code> to get the latest version of <code>'defra-wdio-core'</code>, or they may have cloned a git repository and want to <code>'npm install'</code> all of the dependencies from that project's <code>'package.json'</code> file. Blanket copying all files from the <code>'base'</code> folders into the parent project may overwrite custom configuration the QA tester has added since initialising their project, so it was important to have control over files that must be copied, and files that should not if they already exist.</p>
+    
+    <p>The most important file to be copied is <code>'server.js'</code>, shown below, into the root of the parent project. Again, a very simple script, however placing it in the root of the parent project allows for it to be run with <code>'npm start'</code> without having to modify the <code>'package.json'</code> file of the parent project to add a new script.</p>
+
+    <br><img src="../images/dwc/server-script.png" alt="Server Script" onclick="maxi(this)"><br>
+
+    <p>The script requires the <code>'defra-wdio-core'</code> module and calls a function, <code>'cli()'</code>. This function uses a Node.js module called <code>'Commander'</code> to process command line arguments; this is shown below. If calling <code>'npm start local'</code> or <code>'npm start browserstack'</code> the function reads the arguments and passes <code>'local'</code> or <code>'browserstack'</code> to the <code>'wdio()'</code> function. This function uses <code>'local'</code> or <code>'browserstack'</code> to decide which configuration file to pass to the WebdriverIO module's <code>'run()'</code> function.</p>
+
+    <br><img src="../images/dwc/commander-script.png" alt="Commander Script" onclick="maxi(this)"><br>
+
+    <p>As a dependency of <code>'defra-wdio-core'</code>, WebdriverIO was installed, along with all <em>its</em> dependencies. Because the WebdriverIO module itself uses arguments passed with command line statements, the <code>'wdio()'</code> function replaces the argument at index 2 (which would have been <code>'local'</code> or <code>'browserstack'</code>) with the location of the chosen configuration file.</p>
+    
+    <p>WebdriverIO can run isolated tests by passing <code>'--spec'</code> and the test name as additional command line arguments, however because WebdriverIO is not being called directly from the command line but rather via Node.js, and Node.js itself uses command line arguments, <code>'--spec'</code> gets stripped out. The <code>'wdio()'</code> function adds it back in after the configuration file location if any additional arguments are given.</p>
+    
+    <p>The configuration files, <code>'local'</code> and <code>'browserstack'</code>, are Objects containing WebDriver and WebdriverIO options relating to their respective environments; these can be seen in the next two images.</p>
+
+    <br><img src="../images/dwc/local-config.png" alt="The 'local' Configuration File" onclick="maxi(this)"><br>
+    <br><img src="../images/dwc/browserstack-config.png" alt="The 'browserstack' Configuration File" onclick="maxi(this)"><br>
+
+    <p>Each of these merges with a <code>'common'</code> configuration file that contains options shared by both environments, shown below.</p>
+
+    <br><img src="../images/dwc/common-config.png" alt="The 'common' Configuration File" onclick="maxi(this)"><br>
+
+    <p>In turn, <code>'common'</code> merges with three other configuration files: a <code>'hooks'</code> configuration file from the parent project that contains functions to be called at various points during a test, shown below…</p>
+
+    <br><img src="../images/dwc/hooks-config.png" alt="The 'hooks' Configuration File" onclick="maxi(this)"><br>
+
+    <p>…a <code>'custom'</code> configuration file from the parent project used when the QA tester wants to override any of the default options, shown below…</p>
+
+    <br><img src="../images/dwc/custom-config.png" alt="The 'custom' Configuration File" onclick="maxi(this)"><br>
+
+    <p>…and a <code>'framework'</code> configuration file, shown below, determined by the <code>'framework'</code> property in the <code>'custom'</code> configuration file (seen above on line 10), specifying which test framework to use and where to find test files.</p>
+
+    <br><img src="../images/dwc/cucumber-config.png" alt="The 'framework' Configuration File" onclick="maxi(this)"><br>
+
+    <p>In addition, the <code>'browserstack'</code> configuration file (seen earlier), takes an Array of Objects corresponding with BrowserStack capabilities, shown below; these are browsers, operating systems, and devices available on the BrowserStack platform. The Array is made up of capabilities stipulated by GDS as needing to be tested against when developing a government service. The <code>'browserstack'</code> configuration file maps this Array to another, adding additional properties to each Object in the Array.</p>
+
+    <br><img src="../images/dwc/browser-list.png" alt="The GDS Browser List" onclick="maxi(this)"><br>
+
+    <p>With all of the setup, configuration, and installation automation now complete, the tool was ready to use. I published the project to <code>'npmjs.com'</code> so that it could be installed with the command line statement <code>'npm install defra-wdio-core'</code>; it could also be installed directly from the GitHub repository using <code>'npm install https://github.com/DEFRA/defra-wdio-core'</code>.</p>
+
+    <h3 id="anomalies">Some NPM Anomalies</h3>
+
+    <p>During development, I published my project and installed it in dummy parent projects to ensure the installation scripts did as expected. When things weren't quite right, I corrected issues in my code, republished and installed it in another dummy project.</p>
+    
+    <p>When testing to see that the installation script ran correctly when using <code>'npm update'</code> or <code>'npm install'</code> in a project where <code>'defra-wdio-core'</code> was already installed, some unusual behaviour occurred.</p>
+    
+    <p>During the update/re-install, two important dependencies of WebdriverIO were removed. This caused tests not to pass due to certain steps not being carried out in the browser.</p>
+    
+    <p>I repeated the process again (an installation from scratch, followed by an update) but this time I output to the console a verbose log of the update to identify the dependencies that were removed. Once identified, modules called <code>'detect-libc'</code> and <code>'fibers'</code>, I searched through the WebdriverIO <code>'package-lock.json'</code> to find them.</p>
+    
+    <p>The <code>'package.json'</code> file in a project lists meta-data about that project, including its direct dependencies, whereas the <code>'package-lock.json'</code> file lists all dependencies and sub-dependencies of those dependencies, so that if the <code>'node_modules'</code> folder were deleted, the exact same versions of everything could be re-installed.</p>
+    
+    <p>After searching the lock file, I could not find them; this suggested the issue was with WebdriverIO and not my project. After additional research online, this was confirmed. To solve this problem and ensure my project behaved as expected both during new installations and updates, I added <code>'detect-libc'</code> and <code>'fibers'</code> as direct dependencies of <code>'defra-wdio-core'</code>, meaning they would definitely be included in the lock file.</p>
+
+    <h3 id="extending">Extending the Tool</h3>
+
+    <p>I reviewed the tool in its current state with the senior developers and worked closely with the QA tester to identify requirements beyond the project setup.</p>
+    
+    <p>We discussed their current ways of working; particularly around which aspects were project specific and which were universal. I identified common functions that the tester might use on a project and built these into a <code>'Core'</code> class, shown below.</p>
+
+    <br><img src="../images/dwc/page-class.png" alt="The 'Core' Class" onclick="maxi(this)"><br>
+
+    <p>This <code>'Core'</code> class was placed in the <code>'defra-wdio-core' 'node_modules'</code> folder, and could be used to extend classes that the QA tester creates, as shown below; in this example the <code>'Core'</code> class has been used to extend a <code>'Page'</code> class in the parent project.</p>
+
+    <br><img src="../images/dwc/extend-class.png" alt="Extending with the 'Core' Class" onclick="maxi(this)"><br>
+
+    <p>To more easily explain to the senior developers, and QA tester, how the tool functioned when the tests were being run, I drew the following diagram.</p>
+
+    <br><img src="../images/dwc/activity-diagram-2.png" alt="Activity Diagram" onclick="maxi(this)"><br>
+
+    <h3 id="guidance">Usage Guidance</h3>
+
+    <p>My next step was to document how the tool should be used. I initialised a new project using the tool so as to create some example Cucumber features and Mocha specs, shown below.</p>
+
+    <br><img src="../images/dwc/spec-example.png" alt="Cucumber Features & Mocha Specs" onclick="maxi(this)"><br>
+
+    <p>I also created step definitions for the Cucumber features, shown below.</p>
+
+    <br><img src="../images/dwc/step-definitions.png" alt="Step Definitions" onclick="maxi(this)"><br>
+
+    <p>Finally, I created further examples to demonstrate how the <code>'Core'</code> class instance could be used by a QA tester to write their own step definitions and, as seen earlier, how the <code>'Core'</code> class could be used to extent other classes, all shown below.</p>
+
+    <br><img src="../images/dwc/further-spec-examples.png" alt="Further Examples" onclick="maxi(this)"><br>
+
+    <p>I updated <code>'defra-wdio-core'</code> to include these examples and to copy them across to any newly instantiated project. This meant that even QA testers new to the department, and new to its ways of working, could quickly get up to speed with the agreed standards and approach to carrying out acceptance testing.</p>
+    
+    <p>Alongside these built in examples, I also wrote extensive documentation on how to use the tool, and each of the available functions. I have included some examples of this documentation below.</p>
+
+    <br><img src="../images/dwc/readme-1.png" alt="User Guide - Getting Started" onclick="maxi(this)"><br>
+    <br><img src="../images/dwc/readme-2.png" alt="User Guide - Core Functions List" onclick="maxi(this)"><br>
+    <br><img src="../images/dwc/readme-3.png" alt="User Guide - Core Functions Descriptions" onclick="maxi(this)"><br>
+
+    <a href="../../welcome.html">Back</a>
+    
+  </div>
+
+  <div id="modal">
+    <img id="image">
+    <div id="caption"></div>
+    <span id="cross" onclick="mini()">&times;</span>
+  </div>
+
+  <script src="../main.js"></script>
+
+  </body>
+</html>

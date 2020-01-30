@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../main.css">
+    <title>Resource Management Tool</title>
+  </head>
+  <body>
+
+  <div class="centralised">
+
+    <br><h2>Resource Management Tool</h2>
+
+    <a class="back" href="../../welcome.html">Back</a>
+
+    <h3>Sections</h3>
+
+    <a href="#introduction">Introduction</a><br>
+    <a href="#stories">User Stories</a><br>
+    <a href="#kanban">Kanban Board</a><br>
+    <a href="#scripts">Database Migration Scripts</a><br>
+    <a href="#tdd">Developing the Person Class Using TDD</a><br>
+    <a href="#requesting">Requesting Leave</a><br>
+    <a href="#submission">Leave Requesting Submission Form</a><br>
+    <a href="#action">Leave Action Table</a><br>
+    <a href="#calendar">Leave Calendar</a>
+
+    <h3 id="introduction">Introduction</h3>
+
+    <p>As the ELM project was still in its early stages, there were few chances to write any code in earnest. I raised this with my manager, expressing my concern that this position would not afford me opportunities to gain the experience necessary to become a well-rounded software developer.</p>
+    
+    <p>I asked to be placed either on a more mature project, or on a new but smaller scoped project, so as to be in a position to code sooner. My manager said that they, and other resource managers in the department, had been looking to replace an expensive piece of software used to monitor the projects' staff were working on, alongside their annual leave entitlement and absences.</p>
+    
+    <p>They wanted it to be functionally almost the same as the old piece of software, with the option to add or remove features as the project progressed and as requirements changed. With that in mind, I began work on the Resource Management Tool.</p>
+
+    <h3 id="stories">User Stories</h3>
+
+    <p>Following discussions with resource managers (the primary users of the application) I translated business requirements into user stories to help inform on required software features; an example can be seen below. These were reviewed and approved by the resource managers. I broke larger user stories into smaller ones for adding to the backlog. Each piece of work has acceptance criteria and steps to carry out each action from a user's point of view.</p>
+
+    <br><img src="../images/rmt/user-story.png" alt="An Example User Story" onclick="maxi(this)"><br>
+
+    <h3 id="kanban">Kanban Board</h3>
+
+    <p>To monitor the project throughout its development, I created a Kanban board using Trello; it was important for me to continue to work with agile processes despite this being a solo project. With it, I could keep track of work completed, in review, in progress, or in the backlog.</p>
+    
+    <p>I grouped related functionality into epics and labelled them accordingly. Shown below, each task has been labelled according to its epic.</p>
+
+    <br><img src="../images/rmt/kanban-board.png" alt="Kanban Board" onclick="maxi(this)"><br>
+
+    <p>As I began to develop each application feature to meet each user story, I would move them to <code>'In Progress'</code>. Once I had completed the user story and all continuous integration tests were passing, I would move the user story into <code>'In Review'</code>, and have a colleague complete user acceptance testing to confirm the feature had been delivered as requested and move the user story into <code>'Complete'</code>, before I completed the pull request to push the codebase to the master development branch and then deployed.</p>
+    
+    <p>At the end of an epic, I met with resource managers to gather feedback and adjusted requirements and user stories as necessary. The Kanban was a useful tool throughout the project – myself, my manager, and other project stakeholders (resource managers and higher), could see how the project was progressing, and could estimate timelines for each feature based off of those that had been delivered.</p>
+
+    <h3 id="scripts">Database Migration Scripts</h3>
+
+    <p>An early consideration for the project was how to ensure the structure of the accompanying database, and the data held in it, was kept up to date across each environment - development, test, and production.</p>
+    
+    <p>I had previously used Sequelize, an Object-Relational Mapping tool for Node.js, to handle SQL database migrations as a project progressed. Migrations are scripts (in this case written in Sequelize syntax) to be run in sequence to allow a database to be rebuilt from scratch back to the current state. I was not happy with some of Sequelize's quirks and found it easier to write standard SQL queries.</p>
+    
+    <p>It was important for me to have a process for dealing with migrations so that, during deployment to each environment, the database was recreated the same each time. Not having a process could result in additional work further down the line, having to create the database manually, or even having errors in my code that could be difficult to locate.</p>
+    
+    <p>Once I had deciding that developing a new solution would be worthwhile, I identified the requirements and I worked on my own to develop the scripts using JavaScript; I created a class with a series of functions to check a given folder for SQL files, shown below.</p>
+
+    <br><img src="../images/rmt/database-migration-scripts.png" alt="Database Scripts" onclick="maxi(this)"><br>
+
+    <p>The given database would be checked to see which SQL files had already been run, and those that hadn't would then be run, updating the database to the most recent state. This class is reusable for both migrations and seeds, or any folder of SQL files, if you wanted to separate them out for some reason. Example uses shown below.</p>
+
+    <br><img src="../images/rmt/migrations-and-seeds.png" alt="Migrations and Seeds" onclick="maxi(this)"><br>
+
+    <p>These scripts can be run manually with <code>'npm run migrations'</code> or <code>'npm run seeds'</code> in Terminal, but can also run autonomously when Travis.ci performs checks on the repository, and on deployment to Heroku, to ensure the live instance of the database matches that in the development environment. Travis.ci is a continuous integration service used to run scripts and tests prior to deployment. Heroku is a hosting service used to host the live application. The database itself was hosted on AWS, a service offering cloud storage.</p>
+
+    <p>Although this script was developed for this specific project to solve a problem, it can be used on future projects, by myself and colleagues, with very few changes required.</p>
+
+    <h3 id="tdd">Developing the Person Class Using TDD</h3>
+
+    <p>Each feature of the Resource Management Tool was created using Test Driven Development – the process of writing simple, failing tests, before writing code to pass those tests, refactoring the code, then repeating the process.</p>
+    
+    <p>Shown below is the suite of tests for the <code>Person</code> class, written in Mocha (a testing framework) using Chai assertions (an assertions framework), and stubbing external classes with Sinon (a mocking/spying/stubbing framework.)</p>
+
+    <br><img src="../images/rmt/person-class-tests.png" alt="The 'Person' Class Tests" onclick="maxi(this)"><br>
+
+    <p>Within the context of the Resource Management Tool, the <code>Person</code> class allows for Objects to be created to represent system users, members of staff, resource managers, etc. These Objects could then be used to present and display information about the user on the web page, or be passed around by other functions elsewhere is the application. Shown below is the completed <code>Person</code> class.</p>
+
+    <br><img src="../images/rmt/person-class.png" alt="The 'Person' Class" onclick="maxi(this)"><br>
+
+    <p>I initially wrote a simple test to ensure the function <code>'getPerson'</code> could be called on the <code>'Person'</code> class, once passing I updated the test to ensure there was a return value, then again to ensure correct data was being returned from a database query, which I later stubbed. The <code>'Person'</code> constructor tests came next, first that a new <code>'Person'</code> could be created, then that the <code>'Person'</code> had the correct properties. The <code>'buildObject'</code> function was born out of testing after the <code>'Person'</code> constructor tests proved I could not get the desired outcome with my initial approach. After creating the <code>'buildObject'</code> function with tests and getting the desired product of calling each function, all tests were passing and I had 100% code coverage, shown below.</p>
+
+    <br><img src="../images/rmt/passing-tests.png" alt="Passing Tests & Code Coverage" onclick="maxi(this)"><br>
+    
+    <p>Developing features using TDD helped to ensure the code was in a constantly working state, this would aid in the development of future features, by myself and other colleagues working on the project. Having a suite of passing tests also helps to reassure stakeholders that a robust approach was taken during the development of their application.</p>
+
+    <h3 id="requesting">Requesting Leave</h3>
+
+    <p>Once I had completed all user stories relating to the administration of users, I began working on the <code>'leave'</code> epic; this consisted of a number of user stories relating to requesting leave, approving and rejecting leave requests, and viewing the status of leave requests of an individual, or a team.</p>
+
+    <h3 id="submission">Leave Request Submission Form</h3>
+
+    <p>The first logical user story to work on was the leave request submission form, shown below.</p>
+
+    <br><img src="../images/rmt/leave-request-user-story.png" alt="Leave Request User Story" onclick="maxi(this)"><br>
+
+    <p>I developed the below user interface to allow a date, or a range of dates, to be entered, and a leave type and duration to be selected before the request is submitted.</p>
+
+    <br><img src="../images/rmt/leave-request-user-interface.png" alt="Leave Request User Interface" onclick="maxi(this)"><br>
+
+    <p>Buttons and active elements are clearly highlighted to assist the user. If users select <code>'am'</code> or <code>'pm'</code> the form adjusts so as to not expect an <code>'end'</code> date and a <code>'half day'</code> is calculated. Single, or date ranges, show the number of days selected; weekends and bank holidays are discounted from this total.</p>
+    
+    <p>As a feature within a tool that all staff would eventually use on a daily basis, business context was a major consideration in designing the UI to make it intuitive, and meet the requirement of capturing all the data that was needed for a leave request.</p>
+    
+    <p>To that end, I wanted users to be able to enter the dates using a date-picker. I researched a number of pre-existing date-pickers and decided to use the one available in the jQuery JavaScript library, as it was simple but extensible, allowing me to add the additional functionality I needed.</p>
+    
+    <p>When a <code>'start'</code> date was selected I wanted the <code>'end'</code> date field to be restricted to only allow dates after the <code>'start'</code> date, and similarly when an <code>'end'</code> date was selected the <code>'start'</code> date field would only allow dates before the <code>'end'</code> date. The code I wrote to achieve this can be seen below.</p>
+
+    <br><img src="../images/rmt/date-picker-code.png" alt="The Date Picker Code" onclick="maxi(this)"><br>
+
+    <p>The date-picker was heavily redesigned to match the overall style of the app. If the user is using a browser that does not support JavaScript the form will continue to function, with the user being able to manually enter date(s). Shown below is a short demonstration of the user interface in action.</p>
+
+    <br><video controls>
+      <source src="../images/rmt/user-experience.m4v" type="video/mp4"> 
+    </video><br>
+
+    <h3 id="action">Leave Action Table</h3>
+
+    <p>Of course, once a leave request has been submitted, it needs to be actioned. There were three user stories relating to this feature, shown below; one to approve requests, one to reject requests, and one to cancel/remove requests. I developed these in succession as the code and UI were closely related.</p> 
+
+    <br><img src="../images/rmt/approve-request-user-story.png" alt="Approve Request User Story" onclick="maxi(this)"><br>
+    <br><img src="../images/rmt/reject-request-user-story.png" alt="Reject Request User Story" onclick="maxi(this)"><br>
+    <br><img src="../images/rmt/remove-request-user-story.png" alt="Remove Request User Story" onclick="maxi(this)"><br>
+
+    <p>Shown below is the <code>'/dashboard'</code> route. As with all routes in the Resource Management Tool, it first checks that user details are stored in the session cache, shown on line 4; this is to ensure that the request to visit <code>'/dashboard'</code> is by a logged in user. If no user details are stored, the application re-directs to the login page, <code>'/'</code>. If user details are stored, they are used to collect data for presentation on the page; for example, on line 9, the <code>'personId'</code> property of the <code>'user'</code> Object in the session cache is used to get leave requests.</p>
+
+    <br><img src="../images/rmt/dashboard-route-1.png" alt="The '/dashboard' Route" onclick="maxi(this)"><br>
+
+    <p>The first image shown below is the <code>'Dashboard'</code> class, and highlighted is the <code>'getRequests'</code> function. This calls a similarly named function on the <code>'DatabaseDashboard'</code> class, shown in the second image, that contacts the database to return the requested data.</p>
+
+    <br><img src="../images/rmt/dashboard-class-1.png" alt="The 'Dashboard' Class" onclick="maxi(this)"><br>
+    <br><img src="../images/rmt/databasedashboard-class-1.png" alt="The 'DatabaseDashboard' Class" onclick="maxi(this)"><br>
+
+    <p>Once passed back to the <code>'Dashboard'</code> class, the <code>'getRequests'</code> function maps the results to an Array of <code>'Leave'</code> Objects. This last section of code shows the <code>'Leave'</code> class, highlighting the <code>'constructor'</code>, with all the properties required to build the table of leave requests on the dashboard page, along with the <code>'formatDate'</code> function, used to take an ISO Date Object and convert it to a String in the desired format.</p>
+
+    <br><img src="../images/rmt/leave-class.png" alt="The 'Leave' Class" onclick="maxi(this)"><br>
+
+    <p>I developed the user interface so that outstanding leave request actions are displayed at the top of a resource manager's dashboard once they have logged in to the Resource Management Tool, as can be seen in the next two images.</p>
+
+    <br><img src="../images/rmt/approve-user-interface.png" alt="Approving a Leave Request" onclick="maxi(this)"><br>
+    <br><img src="../images/rmt/reject-user-interface.png" alt="Rejecting a Leave Request" onclick="maxi(this)"><br>
+
+    <p>The interface is straightforward, only displaying relevant information to help decide on each leave request. Once actioned, the request is removed from the outstanding actions list. Requests are displayed in the order they were submitted, not by the date that was requested; this allows for requests to be actioned on a first come, first served basis.</p>
+    
+    <p>The <code>'approve'</code> and <code>'reject'</code> buttons visit a simple route that takes each action and calls the <code>'changeStatus'</code> query on the <code>'DatabaseLeaveAction'</code> class, as can be seen below.</p>
+
+    <br><img src="../images/rmt/databaseleaveaction-class.png" alt="The 'DatabaseLeaveAction' Class" onclick="maxi(this)"><br>
+
+    <p>Previously actioned, along with outstanding leave requests, for a specific person can be found against their person record, displaying the status of each request, and ordered by the date that was requested, shown below. The information in this screen is only visible to resource managers.</p>
+
+    <br><img src="../images/rmt/remove-user-interface.png" alt="Removing a Leave Request" onclick="maxi(this)"><br>
+
+    <p>Like before, the <code>'remove'</code> button visits a simple route that calls the <code>'deleteLeave'</code> query on the <code>'DatabaseLeaveDelete'</code> class, as can be seen below.</p>
+
+    <br><img src="../images/rmt/databaseleavedelete-class.png" alt="The 'DatabaseLeaveDelete' Class" onclick="maxi(this)"><br>
+
+    <p>The code and the user interface work together to satisfy the user stories, delivering a consistent user experience across the application.</p>
+
+    <h3 id="calendar">Leave Calendar</h3>
+
+    <p>To tie the above features together, and visualise leave requests across the team, approved or otherwise, I tackled the user story covering the calendar view. This would allow all users to view the leave situation for their team and plan their leave accordingly.</p>
+
+    <br><img src="../images/rmt/leave-calendar-user-story.png" alt="Leave Calendar User Story" onclick="maxi(this)"><br>
+
+    <p>Shown below is the previously seen <code>'Dashboard'</code> route, this time highlighting line 8, showing a call to the <code>'getLeave'</code> function on the <code>'Dashboard'</code> class.</p>
+
+    <br><img src="../images/rmt/dashboard-route-2.png" alt="The '/dashboard' Route" onclick="maxi(this)"><br>
+
+    <p>The <code>'getLeave'</code> function performs a number of transformations on data returned from the database, shown below. The first step is to establish a <code>'weekdays'</code> template, seen on line 15; this is an Array of seven elements, one for each day of the week. On line 16, the <code>'bankHolidays'</code> function is called on the <code>'Leave'</code> class to retrieve from the database any bank holidays between the two arguments in the function call. Lines 18 to 24 iterate through the <code>'bankHolidays'</code> results and map a bank holiday Object to the respective day of the <code>'weekdays'</code> template; all of this was to ensure that in the calendar, every member of the team would be shown as absent that day.</p>
+
+    <br><img src="../images/rmt/dashboard-class-2.png" alt="The 'Dashboard' Class" onclick="maxi(this)"><br>
+
+    <p>After bank holidays are dealt with, the <code>'getLeave'</code> function calls a similarly named function on the <code>'DatabaseDashboard'</code> class (seen above on line 26) to contact the database to return the requested data. The <code>'personId'</code> of the currently logged in user is used to retrieve from the database everyone who shares the same manager, along with each of those people's leave requests, for a given 7-day period, shown below.</p>
+
+    <br><img src="../images/rmt/databasedashboard-class-2.png" alt="The 'DatabaseDashboard' Class" onclick="maxi(this)"><br>
+
+    <p>Referring back to the <code>'getLeave'</code> function on the <code>'Dashboard'</code> class, the return from the database query is stored, on line 26, then from lines 29 to 55, transformed into a two-dimensional Array, the outer Array representing people and the inner Array representing days of the week; if a person had leave for a specific day that would be represented with an Object displaying <code>status</code> and <code>duration</code>. This two-dimensional Array was passed through the route to the view then iterated through to build a html table, as shown below.</p>
+
+    <br><img src="../images/rmt/dashboard-view.png" alt="The '/dashboard' View" onclick="maxi(this)"><br>
+
+    <p>Shown below, the <code>'past'</code> and <code>'next'</code> buttons change the dates of the 7-day period passed to the database query, and repeat the above steps to render that specific week on screen, providing the facility to go back and forth week by week, displaying each person's leave requests, duration, and status. A check is made each time the route is visited as to whether the week being queried is the current week and the visibility of the <code>'current week'</code> button is changed accordingly.</p>
+
+    <br><img src="../images/rmt/leave-calendar-user-interface.png" alt="Leave Calendar User Interface" onclick="maxi(this)"><br>
+
+    <p>This collection of features was well received by colleagues, who provided feedback whilst acceptance testing, as shown below. As one of the main features for the app, stakeholders were very pleased with the calendar as it would help all users plan their time off, and help resources managers to keep track of their team.</p>
+
+    <br><img src="../images/rmt/feedback-1.png" alt="Approve Leave Requests Feedback" onclick="maxi(this)"><br>
+    <br><img src="../images/rmt/feedback-2.png" alt="Submit Leave Requests Feedback" onclick="maxi(this)"><br>
+    <br><img src="../images/rmt/feedback-3.png" alt="Leave Calendar Feedback" onclick="maxi(this)"><br>
+
+    <a href="../../welcome.html">Back</a>
+
+  </div>
+
+  <div id="modal">
+    <img id="image">
+    <div id="caption"></div>
+    <span id="cross" onclick="mini()">&times;</span>
+  </div>
+
+  <script src="../main.js"></script>
+
+  </body>
+</html>
